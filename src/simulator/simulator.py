@@ -53,6 +53,11 @@ def delete_address(data):
 def create_address(data):
   return requests.post(f"http://localhost:9000/address?line1={html.escape(data.get('line1') or '')}&line2={html.escape(data.get('line2') or '')}&city={html.escape(data.get('city') or '')}&state={html.escape(data.get('state') or '')}&zip={html.escape(data.get('zip') or '')}")
 
+# get stats
+# @GetMapping(value = "/stats")
+def get_stats():
+  return requests.get(f"http://localhost:9000/stats")
+
 
 def simulator(filename):
   address_list = []
@@ -62,7 +67,7 @@ def simulator(filename):
       addressId = data.get('addressId') or ''
       if addressId.startswith('ref '):
         try:
-          index = int(addressId.split(' ')[1])
+          index = 1 + int(addressId.split(' ')[1])
           cached = address_list[index]
           data['addressId'] = cached
         except:
@@ -78,6 +83,8 @@ def simulator(filename):
         result = update_address(data)
       elif task == 'delete':
         result = delete_address(data)
+      elif task == 'stats':
+        result = get_stats()
       else:
         result = create_address(data)
         if result.status_code == 200:

@@ -2,7 +2,6 @@ package org.bxo.address.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,9 +57,8 @@ public class AddressServiceImpl implements AddressService {
 					longestWord = w;
 				}
 			}
-			Set<UUID> result = rootNode.search(longestWord, maxResults, exactMatch);
 
-			for (UUID a : result) {
+			for (UUID a : rootNode.search(longestWord, maxResults, exactMatch)) {
 				AddressInfo address = getAddress(a);
 				if (null != address) {
 					boolean found = true;

@@ -1,7 +1,10 @@
 package org.bxo.address.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -20,20 +23,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AddressController {
 
+	private static final ConcurrentHashMap<String, AtomicLong> requestCount = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String, AtomicLong> requestMillis = new ConcurrentHashMap<>();
+
 	@Autowired
 	private AddressService addressService;
 
 	@GetMapping(value = "/address")
 	public ResponseEntity<Object> getAddress(@RequestParam(name = "addressId", required = true) String addressId) {
-		// try {
-		AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
-		if (null == address) {
-			return new ResponseEntity<Object>("Address not found", HttpStatus.NOT_FOUND);
+
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
+			if (null == address) {
+				statusCode = HttpStatus.NOT_FOUND;
+				return new ResponseEntity<Object>("Address not found", statusCode);
+			}
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4(address.toString()), statusCode);
+
+		} finally {
+			updateStats("getAddress " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
 		}
-		return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4(address.toString()), HttpStatus.OK);
-		// } catch (Throwable t) {
-		// return new ResponseEntity<String>("Address not found", HttpStatus.NOT_FOUND);
-		// }
 	}
 
 	@GetMapping(value = "/search")
@@ -41,32 +53,38 @@ public class AddressController {
 			@RequestParam(name = "maxResults", required = false) Long maxResults,
 			@RequestParam(name = "exactMatch", required = false) Boolean exactMatch,
 			@RequestParam(name = "requireAll", required = false) Boolean requireAll) {
-		// try {
-		if (null == maxResults || maxResults < 1) {
-			maxResults = 10L;
+
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			if (null == maxResults || maxResults < 1) {
+				maxResults = 10L;
+			}
+			if (null == exactMatch) {
+				exactMatch = false;
+			}
+			if (null == requireAll) {
+				requireAll = false;
+			}
+			List<AddressInfo> addressList = addressService.search(query, maxResults, exactMatch, requireAll);
+			if (null == addressList || addressList.size() == 0) {
+				statusCode = HttpStatus.NOT_FOUND;
+				return new ResponseEntity<Object>("Address not found", statusCode);
+			}
+			String prefix = "\"";
+			StringBuilder sb = new StringBuilder();
+			sb.append("[\n");
+			for (AddressInfo i : addressList) {
+				sb.append(prefix + StringEscapeUtils.escapeHtml4(i.toString()) + "\"");
+				prefix = ",\n\"";
+			}
+			sb.append("\n]");
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(sb.toString(), statusCode);
+
+		} finally {
+			updateStats("search " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
 		}
-		if (null == exactMatch) {
-			exactMatch = false;
-		}
-		if (null == requireAll) {
-			requireAll = false;
-		}
-		List<AddressInfo> addressList = addressService.search(query, maxResults, exactMatch, requireAll);
-		if (null == addressList || addressList.size() == 0) {
-			return new ResponseEntity<Object>("Address not found", HttpStatus.NOT_FOUND);
-		}
-		String prefix = "\"";
-		StringBuilder sb = new StringBuilder();
-		sb.append("[\n");
-		for (AddressInfo i : addressList) {
-			sb.append(prefix + StringEscapeUtils.escapeHtml4(i.toString()) + "\"");
-			prefix = ",\n\"";
-		}
-		sb.append("\n]");
-		return new ResponseEntity<Object>(sb.toString(), HttpStatus.OK);
-		// } catch (Throwable t) {
-		// return new ResponseEntity<String>("Address not found", HttpStatus.NOT_FOUND);
-		// }
 	}
 
 	@PostMapping(value = "/address")
@@ -76,21 +94,25 @@ public class AddressController {
 			@RequestParam(name = "state", required = true) String state,
 			@RequestParam(name = "zip", required = true) String zip) {
 
-		// try {
-		AddressInfo address = new AddressInfo(UUID.randomUUID());
-		address.setLine1(line1.trim());
-		if (!StringUtils.isBlank(line2)) {
-			address.setLine2(line2.trim());
-		}
-		address.setCity(city.trim());
-		address.setState(state.trim());
-		address.setZip(zip.trim());
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			AddressInfo address = new AddressInfo(UUID.randomUUID());
+			address.setLine1(line1.trim());
+			if (!StringUtils.isBlank(line2)) {
+				address.setLine2(line2.trim());
+			}
+			address.setCity(city.trim());
+			address.setState(state.trim());
+			address.setZip(zip.trim());
 
-		return new ResponseEntity<Object>(
-				StringEscapeUtils.escapeHtml4(addressService.createAddress(address).toString()), HttpStatus.OK);
-		// } catch (Throwable t) {
-		// return invalidParam();
-		// }
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(
+					StringEscapeUtils.escapeHtml4(addressService.createAddress(address).toString()), statusCode);
+
+		} finally {
+			updateStats("createAddress " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
+		}
 	}
 
 	@PutMapping(value = "/address")
@@ -100,41 +122,102 @@ public class AddressController {
 			@RequestParam(name = "city", required = false) String city,
 			@RequestParam(name = "state", required = false) String state,
 			@RequestParam(name = "zip", required = false) String zip) {
-		// try {
-		AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
-		if (!StringUtils.isBlank(line1)) {
-			address.setLine1(line1.trim());
-		}
-		if (!StringUtils.isBlank(line2)) {
-			address.setLine2(line2.trim());
-		}
-		if (!StringUtils.isBlank(city)) {
-			address.setCity(city.trim());
-		}
-		if (!StringUtils.isBlank(state)) {
-			address.setState(state.trim());
-		}
-		if (!StringUtils.isBlank(zip)) {
-			address.setZip(zip.trim());
-		}
 
-		return new ResponseEntity<Object>(
-				StringEscapeUtils.escapeHtml4(addressService.updateAddress(address).toString()), HttpStatus.OK);
-		// } catch (Throwable e) {
-		// return invalidParam();
-		// }
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
+			if (!StringUtils.isBlank(line1)) {
+				address.setLine1(line1.trim());
+			}
+			if (!StringUtils.isBlank(line2)) {
+				address.setLine2(line2.trim());
+			}
+			if (!StringUtils.isBlank(city)) {
+				address.setCity(city.trim());
+			}
+			if (!StringUtils.isBlank(state)) {
+				address.setState(state.trim());
+			}
+			if (!StringUtils.isBlank(zip)) {
+				address.setZip(zip.trim());
+			}
+
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(
+					StringEscapeUtils.escapeHtml4(addressService.updateAddress(address).toString()), statusCode);
+
+		} finally {
+			updateStats("updateAddress " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
+		}
 	}
 
 	@DeleteMapping(value = "/address")
 	public ResponseEntity<Object> deleteAddress(@RequestParam(name = "addressId", required = true) String addressId) {
-		AddressInfo address = addressService.deleteAddress(UUID.fromString(addressId));
-		String deleteMsg = "Deleted addressId " + addressId;
-		if (null == address) {
-			deleteMsg = addressId + " already deleted";
-		} else if (!address.getAddressId().toString().equals(addressId)) {
-			return new ResponseEntity<Object>("Internal Error", HttpStatus.INTERNAL_SERVER_ERROR);
+
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			AddressInfo address = addressService.deleteAddress(UUID.fromString(addressId));
+			if (null == address) {
+				statusCode = HttpStatus.NOT_FOUND;
+				return new ResponseEntity<Object>("Address not found", statusCode);
+			} else if (!address.getAddressId().toString().equals(addressId)) {
+				statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+				return new ResponseEntity<Object>("Internal Error", statusCode);
+			}
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4("Deleted addressId " + addressId),
+					statusCode);
+
+		} finally {
+			updateStats("deleteAddress " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
 		}
-		return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4(deleteMsg), HttpStatus.OK);
+	}
+
+	@GetMapping(value = "/stats")
+	public ResponseEntity<Object> getStats() {
+
+		Long startMillis = System.currentTimeMillis();
+		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+		try {
+			List<String> requestList = new ArrayList<>();
+			requestList.addAll(requestCount.keySet());
+			String prefix = "  \"";
+			StringBuilder sb = new StringBuilder();
+			sb.append("[\n");
+
+			for (String requestName : requestList) {
+				if (!requestMillis.containsKey(requestName)) {
+					continue;
+				}
+				long count = requestCount.get(requestName).get();
+				long avgMillis = requestMillis.get(requestName).get() / count;
+				sb.append(prefix + StringEscapeUtils.escapeHtml4(requestName) + "\": {\n");
+				sb.append("    \"count\": " + String.valueOf(count) + ",\n");
+				sb.append("    \"averageMillis\": " + String.valueOf(avgMillis) + "\n");
+				sb.append("  }");
+				prefix = ",\n  \"";
+			}
+			sb.append("\n]");
+
+			statusCode = HttpStatus.OK;
+			return new ResponseEntity<Object>(sb.toString(), statusCode);
+
+		} finally {
+			updateStats("getStats " + String.valueOf(statusCode), System.currentTimeMillis() - startMillis);
+		}
+	}
+
+	private static void updateStats(String requestName, Long requestTimeMillis) {
+		if (!requestCount.containsKey(requestName)) {
+			requestCount.putIfAbsent(requestName, new AtomicLong(0L));
+		}
+		if (!requestMillis.containsKey(requestName)) {
+			requestMillis.putIfAbsent(requestName, new AtomicLong(0L));
+		}
+		requestCount.get(requestName).incrementAndGet();
+		requestMillis.get(requestName).addAndGet(requestTimeMillis < 1 ? 1 : requestTimeMillis);
 	}
 
 }

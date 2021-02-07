@@ -71,19 +71,19 @@
   },
   {
     "task": "get",
-    "addressId": "ref 3"
+    "addressId": "ref 4"
   },
   {
     "task": "delete",
-    "addressId": "ref 3"
+    "addressId": "ref 4"
   },
   {
     "task": "get",
-    "addressId": "ref 3"
+    "addressId": "ref 4"
   },
   {
     "task": "delete",
-    "addressId": "ref 3"
+    "addressId": "ref 4"
   },
   {
     "task": "search",
@@ -91,7 +91,7 @@
   },
   {
     "task": "delete",
-    "addressId": "ref 1"
+    "addressId": "ref 2"
   },
   {
     "task": "search",
@@ -106,15 +106,35 @@
   },
   {
     "task": "get",
-    "addressId": "ref 0"
+    "addressId": "ref 1"
   },
   {
     "task": "update",
-    "addressId": "ref 0",
+    "addressId": "ref 1",
     "line1": "Charles Hall"
   },
   {
     "task": "get",
-    "addressId": "ref 0"
+    "addressId": "ref 1"
+  },
+  {
+    "task": "delete",
+    "addressId": "ref 1"
+  },
+  {
+    "task": "update",
+    "addressId": "ref 1",
+    "city": "Charles Hall"
+  },
+  {
+    "task": "get",
+    "addressId": "ref 1"
+  },
+  {
+    "task": "delete",
+    "addressId": "ref 1"
+  },
+  {
+    "task": "stats"
   }
 ]
