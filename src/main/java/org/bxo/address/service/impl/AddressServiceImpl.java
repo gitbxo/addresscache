@@ -17,8 +17,11 @@ public class AddressServiceImpl implements AddressService {
 	private static final SearchNode rootNode = new SearchNode("");
 	private static final ConcurrentHashMap<UUID, AddressInfo> addressMap = new ConcurrentHashMap<>();
 
-	@Value("${org.bxo.address.allowDups:true}")
+	@Value("${org.bxo.address.allow-dups:true}")
 	private Boolean allowDups;
+
+	@Value("${org.bxo.address.default-max-results:10}")
+	private Integer defaultMaxResults;
 
 	@Override
 	public AddressInfo getAddress(UUID addressId) {
@@ -30,11 +33,12 @@ public class AddressServiceImpl implements AddressService {
 	public AddressInfo createAddress(AddressInfo address) {
 		UUID addressId = address.getAddressId();
 		if (!allowDups) {
-			List<AddressInfo> found = this.search(address.getPrintableAddress(), 30L, true, true);
-			if (found != null && found.size() > 0) {
-				return new AddressInfo(found.get(0));
+			AddressInfo found = this.findDuplicate(address.getTextAddress());
+			if (null != found) {
+				return found;
 			}
 		}
+
 		addressMap.putIfAbsent(addressId, new AddressInfo(address));
 		AddressInfo result = getAddress(addressId);
 		rootNode.addAddress(result);
@@ -42,7 +46,7 @@ public class AddressServiceImpl implements AddressService {
 	}
 
 	@Override
-	public List<AddressInfo> search(String query, long maxResults, boolean exactMatch, boolean requireAll) {
+	public List<AddressInfo> search(String query, int maxResults, boolean exactMatch, boolean requireAll) {
 		List<AddressInfo> addressList = new ArrayList<>();
 
 		if (requireAll && exactMatch) {
@@ -51,18 +55,12 @@ public class AddressServiceImpl implements AddressService {
 				return addressList;
 			}
 
-			String longestWord = words.get(0);
-			for (String w : words) {
-				if (w.length() > longestWord.length()) {
-					longestWord = w;
-				}
-			}
-
-			for (UUID a : rootNode.search(longestWord, maxResults, exactMatch)) {
+			for (UUID a : rootNode.search(getLongestWord(words), (maxResults < 1 ? defaultMaxResults : maxResults),
+					exactMatch)) {
 				AddressInfo address = getAddress(a);
 				if (null != address) {
 					boolean found = true;
-					List<String> addrWords = SearchNode.getWords(address.getPrintableAddress());
+					List<String> addrWords = SearchNode.getWords(address.getTextAddress());
 					for (String w : words) {
 						if (!addrWords.contains(w)) {
 							found = false;
@@ -80,7 +78,7 @@ public class AddressServiceImpl implements AddressService {
 			throw new IllegalArgumentException("requireAll can only be set when exactMatch is true");
 
 		} else {
-			for (UUID a : rootNode.search(query, maxResults, exactMatch)) {
+			for (UUID a : rootNode.search(query, (maxResults < 1 ? defaultMaxResults : maxResults), exactMatch)) {
 				AddressInfo address = getAddress(a);
 				if (null != address) {
 					addressList.add(address);
@@ -91,21 +89,50 @@ public class AddressServiceImpl implements AddressService {
 		return addressList;
 	}
 
+	private String getLongestWord(List<String> words) {
+		String longestWord = words.get(0);
+		for (String w : words) {
+			if (w.length() > longestWord.length()) {
+				longestWord = w;
+			}
+		}
+		return longestWord;
+	}
+
+	private AddressInfo findDuplicate(String addressText) {
+		List<AddressInfo> found = this.search(addressText, defaultMaxResults, true, true);
+		if (found != null && found.size() > 0) {
+			for (AddressInfo a : found) {
+				if (a.getTextAddress().equals(addressText)) {
+					return a;
+				}
+			}
+		}
+
+		return null;
+	}
+
 	@Override
 	public AddressInfo updateAddress(AddressInfo update) {
-		UUID addressId = update.getAddressId();
-		AddressInfo address = addressMap.get(addressId);
-		rootNode.removeAddress(address);
+		AddressInfo updated = new AddressInfo(update);
+		String updatedText = updated.getTextAddress();
+		AddressInfo previous = getAddress(updated.getAddressId());
+		String previousText = previous.getTextAddress();
+		if (previousText.equals(updatedText)) {
+			return updated;
+		}
 
-		address.setLine1(update.getLine1());
-		address.setLine2(update.getLine2());
-		address.setCity(update.getCity());
-		address.setState(update.getState());
-		address.setZip(update.getZip());
+		if (!allowDups) {
+			if (this.findDuplicate(updatedText) != null) {
+				// Update matches existing address
+				throw new IllegalArgumentException("Update matches existing address");
+			}
+		}
 
-		AddressInfo result = getAddress(addressId);
-		rootNode.addAddress(result);
-		return result;
+		addressMap.put(updated.getAddressId(), updated);
+		rootNode.removeAddress(previous);
+		rootNode.addAddress(updated);
+		return new AddressInfo(updated);
 	}
 
 	@Override

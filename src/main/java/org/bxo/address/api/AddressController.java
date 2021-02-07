@@ -50,15 +50,15 @@ public class AddressController {
 
 	@GetMapping(value = "/search")
 	public ResponseEntity<Object> search(@RequestParam(name = "query", required = true) String query,
-			@RequestParam(name = "maxResults", required = false) Long maxResults,
+			@RequestParam(name = "maxResults", required = false) Integer maxResults,
 			@RequestParam(name = "exactMatch", required = false) Boolean exactMatch,
 			@RequestParam(name = "requireAll", required = false) Boolean requireAll) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 		try {
-			if (null == maxResults || maxResults < 1) {
-				maxResults = 10L;
+			if (null == maxResults) {
+				maxResults = -1;
 			}
 			if (null == exactMatch) {
 				exactMatch = false;
@@ -127,6 +127,7 @@ public class AddressController {
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 		try {
 			AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
+			String previousAddress = address.getTextAddress();
 			if (!StringUtils.isBlank(line1)) {
 				address.setLine1(line1.trim());
 			}
@@ -141,6 +142,9 @@ public class AddressController {
 			}
 			if (!StringUtils.isBlank(zip)) {
 				address.setZip(zip.trim());
+			}
+			if (StringUtils.isBlank(line2) && address.getTextAddress().equals(previousAddress)) {
+				address.setLine2("");
 			}
 
 			statusCode = HttpStatus.OK;

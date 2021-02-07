@@ -61,7 +61,7 @@ public class AddressInfo {
 		return validateZip(zip);
 	}
 
-	public String getPrintableAddress() {
+	public String getTextAddress() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(StringUtils.isBlank(line1) ? "" : (line1 + ", "));
 		sb.append(StringUtils.isBlank(line2) ? "" : (line2 + ", "));
@@ -73,7 +73,7 @@ public class AddressInfo {
 
 	public String toString() {
 		String prefix = (null == addressId ? "<TBD>: " : (addressId.toString() + ": "));
-		return prefix + this.getPrintableAddress();
+		return prefix + this.getTextAddress();
 	}
 
 	public void setLine1(String line1) {

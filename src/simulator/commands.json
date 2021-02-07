@@ -86,8 +86,15 @@
     "addressId": "ref 4"
   },
   {
+    "task": "create",
+    "line1": "Massachusetts Hall",
+    "city": "Cambridge",
+    "state": "MA",
+    "zip": "02138"
+  },
+  {
     "task": "search",
-    "query": "1600 Charles"
+    "query": "160 Charles Mass"
   },
   {
     "task": "delete",
@@ -95,7 +102,7 @@
   },
   {
     "task": "search",
-    "query": "1600 Charles"
+    "query": "160 Charles Mass"
   },
   {
     "task": "create",

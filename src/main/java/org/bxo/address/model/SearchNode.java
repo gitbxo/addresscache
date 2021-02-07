@@ -105,21 +105,31 @@ public class SearchNode {
 		}
 	}
 
-	private Set<UUID> getAllAddresses(long maxResults, boolean includeChildren) {
+	private Set<UUID> getAllAddresses(int maxResults, boolean excludeChildren) {
 		Set<UUID> result = ConcurrentHashMap.newKeySet();
 		result.addAll(addressSet);
 
-		// Variable childList is to prevent locking childMap
-		// while executing for loop
-		List<SearchNode> childList = new ArrayList<>();
-		if (includeChildren) {
+		if (!excludeChildren) {
+			// Variable childList is to prevent locking childMap
+			// while executing for loop
+			List<SearchNode> childList = new ArrayList<>();
 			childList.addAll(childMap.values());
-		}
 
-		for (SearchNode c : childList) {
-			long gap = maxResults - result.size();
-			if (gap > 0) {
-				result.addAll(c.getAllAddresses(gap, includeChildren));
+			for (SearchNode c : childList) {
+				int gap = maxResults - result.size();
+				if (gap <= 0) {
+					break;
+				}
+				Set<UUID> childAddresses = c.getAllAddresses(gap, false);
+				result.addAll(childAddresses);
+				if (childAddresses.size() == 0) {
+					synchronized (this) {
+						if (c.getAllAddresses(gap, false).size() == 0) {
+							childMap.remove(c.prefix);
+							childCount.remove(c.prefix);
+						}
+					}
+				}
 			}
 		}
 
@@ -137,7 +147,7 @@ public class SearchNode {
 		return result;
 	}
 
-	public Set<UUID> search(String query, long maxResults, boolean exactMatch) {
+	public Set<UUID> search(String query, int maxResults, boolean exactMatch) {
 		Set<UUID> result = ConcurrentHashMap.newKeySet();
 
 		List<String> words = getWords(query);
@@ -146,7 +156,7 @@ public class SearchNode {
 		}
 
 		for (String w : words) {
-			long gap = maxResults - result.size();
+			int gap = maxResults - result.size();
 			if (gap > 0 && !StringUtils.isBlank(w)) {
 				Set<UUID> found = searchHelper(w, exactMatch, gap);
 				result.addAll(found);
@@ -157,10 +167,9 @@ public class SearchNode {
 		}
 
 		return result;
-
 	}
 
-	private Set<UUID> searchHelper(String query, boolean exactMatch, long maxResults) {
+	private Set<UUID> searchHelper(String query, boolean exactMatch, int maxResults) {
 		if (!query.startsWith(prefix)) {
 			return ConcurrentHashMap.newKeySet();
 		}
