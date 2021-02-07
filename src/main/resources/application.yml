@@ -7,3 +7,9 @@ management:
     port: 9001
     address: 127.0.0.1
 
+
+
+org:
+  bxo:
+    address:
+      allowDups: false

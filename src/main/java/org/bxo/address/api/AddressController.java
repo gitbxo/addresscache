@@ -37,9 +37,21 @@ public class AddressController {
 	}
 
 	@GetMapping(value = "/search")
-	public ResponseEntity<Object> search(@RequestParam(name = "query", required = true) String query) {
+	public ResponseEntity<Object> search(@RequestParam(name = "query", required = true) String query,
+			@RequestParam(name = "maxResults", required = false) Long maxResults,
+			@RequestParam(name = "exactMatch", required = false) Boolean exactMatch,
+			@RequestParam(name = "requireAll", required = false) Boolean requireAll) {
 		// try {
-		List<AddressInfo> addressList = addressService.search(query, 10);
+		if (null == maxResults || maxResults < 1) {
+			maxResults = 10L;
+		}
+		if (null == exactMatch) {
+			exactMatch = false;
+		}
+		if (null == requireAll) {
+			requireAll = false;
+		}
+		List<AddressInfo> addressList = addressService.search(query, maxResults, exactMatch, requireAll);
 		if (null == addressList || addressList.size() == 0) {
 			return new ResponseEntity<Object>("Address not found", HttpStatus.NOT_FOUND);
 		}
@@ -66,13 +78,13 @@ public class AddressController {
 
 		// try {
 		AddressInfo address = new AddressInfo(UUID.randomUUID());
-		address.setLine1(line1);
+		address.setLine1(line1.trim());
 		if (!StringUtils.isBlank(line2)) {
-			address.setLine2(line2);
+			address.setLine2(line2.trim());
 		}
-		address.setCity(city);
-		address.setState(state);
-		address.setZip(zip);
+		address.setCity(city.trim());
+		address.setState(state.trim());
+		address.setZip(zip.trim());
 
 		return new ResponseEntity<Object>(
 				StringEscapeUtils.escapeHtml4(addressService.createAddress(address).toString()), HttpStatus.OK);
@@ -91,19 +103,19 @@ public class AddressController {
 		// try {
 		AddressInfo address = addressService.getAddress(UUID.fromString(addressId));
 		if (!StringUtils.isBlank(line1)) {
-			address.setLine1(line1);
+			address.setLine1(line1.trim());
 		}
 		if (!StringUtils.isBlank(line2)) {
-			address.setLine2(line2);
+			address.setLine2(line2.trim());
 		}
 		if (!StringUtils.isBlank(city)) {
-			address.setCity(city);
+			address.setCity(city.trim());
 		}
 		if (!StringUtils.isBlank(state)) {
-			address.setState(state);
+			address.setState(state.trim());
 		}
 		if (!StringUtils.isBlank(zip)) {
-			address.setZip(zip);
+			address.setZip(zip.trim());
 		}
 
 		return new ResponseEntity<Object>(
@@ -115,9 +127,14 @@ public class AddressController {
 
 	@DeleteMapping(value = "/address")
 	public ResponseEntity<Object> deleteAddress(@RequestParam(name = "addressId", required = true) String addressId) {
-		addressService.deleteAddress(UUID.fromString(addressId));
-		return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4("Deleted addressId " + addressId),
-				HttpStatus.OK);
+		AddressInfo address = addressService.deleteAddress(UUID.fromString(addressId));
+		String deleteMsg = "Deleted addressId " + addressId;
+		if (null == address) {
+			deleteMsg = addressId + " already deleted";
+		} else if (!address.getAddressId().toString().equals(addressId)) {
+			return new ResponseEntity<Object>("Internal Error", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return new ResponseEntity<Object>(StringEscapeUtils.escapeHtml4(deleteMsg), HttpStatus.OK);
 	}
 
 }

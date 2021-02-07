@@ -30,11 +30,11 @@ public class AddressInfo {
 
 	public AddressInfo(AddressInfo source) {
 		this.addressId = validateAddressId(source.getAddressId());
-		this.line1 = source.getLine1();
-		this.line2 = source.getLine2();
-		this.city = source.getCity();
-		this.state = source.getState();
-		this.zip = source.getZip();
+		this.setLine1(source.getLine1());
+		this.setLine2(source.getLine2());
+		this.setCity(source.getCity());
+		this.setState(source.getState());
+		this.setZip(source.getZip());
 	}
 
 	public UUID getAddressId() {
@@ -61,15 +61,19 @@ public class AddressInfo {
 		return validateZip(zip);
 	}
 
-	public String toString() {
+	public String getPrintableAddress() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(null == addressId ? "<TBD>: " : (addressId.toString() + ": "));
-		sb.append(StringUtils.isBlank(line1) ? "" : (line1 + ","));
-		sb.append(StringUtils.isBlank(line2) ? "" : (line2 + ","));
-		sb.append(StringUtils.isBlank(city) ? "" : (city + ","));
+		sb.append(StringUtils.isBlank(line1) ? "" : (line1 + ", "));
+		sb.append(StringUtils.isBlank(line2) ? "" : (line2 + ", "));
+		sb.append(StringUtils.isBlank(city) ? "" : (city + ", "));
 		sb.append(StringUtils.isBlank(state) ? "" : (state));
 		sb.append(StringUtils.isBlank(zip) ? "" : (" " + zip));
 		return sb.toString();
+	}
+
+	public String toString() {
+		String prefix = (null == addressId ? "<TBD>: " : (addressId.toString() + ": "));
+		return prefix + this.getPrintableAddress();
 	}
 
 	public void setLine1(String line1) {

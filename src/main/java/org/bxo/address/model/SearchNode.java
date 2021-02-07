@@ -9,6 +9,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class SearchNode {
 
 	private String prefix;
@@ -76,16 +78,11 @@ public class SearchNode {
 		UUID addressId = address.getAddressId();
 		Set<String> queries = ConcurrentHashMap.newKeySet();
 
-		List<String> line1Words = Arrays.asList(address.getLine1().trim().toLowerCase().split("\\w+"));
-		queries.addAll(line1Words);
-		List<String> line2Words = Arrays.asList(address.getLine2().trim().toLowerCase().split("\\w+"));
-		queries.addAll(line2Words);
-		List<String> cityWords = Arrays.asList(address.getCity().trim().toLowerCase().split("\\w+"));
-		queries.addAll(cityWords);
-		List<String> stateWords = Arrays.asList(address.getState().trim().toLowerCase().split("\\w+"));
-		queries.addAll(stateWords);
-		List<String> zipWords = Arrays.asList(address.getZip().trim().toLowerCase().split("\\w+"));
-		queries.addAll(zipWords);
+		queries.addAll(getWords(address.getLine1()));
+		queries.addAll(getWords(address.getLine2()));
+		queries.addAll(getWords(address.getCity()));
+		queries.addAll(getWords(address.getState()));
+		queries.addAll(getWords(address.getZip()));
 
 		// StringUtils.isAlphanumeric(prefix)
 		for (String query : queries) {
@@ -97,52 +94,83 @@ public class SearchNode {
 		UUID addressId = address.getAddressId();
 		Set<String> queries = ConcurrentHashMap.newKeySet();
 
-		List<String> line1Words = Arrays.asList(address.getLine1().trim().toLowerCase().split("\\w+"));
-		queries.addAll(line1Words);
-		List<String> line2Words = Arrays.asList(address.getLine2().trim().toLowerCase().split("\\w+"));
-		queries.addAll(line2Words);
-		List<String> cityWords = Arrays.asList(address.getCity().trim().toLowerCase().split("\\w+"));
-		queries.addAll(cityWords);
-		List<String> stateWords = Arrays.asList(address.getState().trim().toLowerCase().split("\\w+"));
-		queries.addAll(stateWords);
-		List<String> zipWords = Arrays.asList(address.getZip().trim().toLowerCase().split("\\w+"));
-		queries.addAll(zipWords);
+		queries.addAll(getWords(address.getLine1()));
+		queries.addAll(getWords(address.getLine2()));
+		queries.addAll(getWords(address.getCity()));
+		queries.addAll(getWords(address.getState()));
+		queries.addAll(getWords(address.getZip()));
 
 		for (String query : queries) {
 			removeAddress(query, addressId);
 		}
 	}
 
-	public Set<UUID> getAllAddresses(long maxResults) {
+	private Set<UUID> getAllAddresses(long maxResults, boolean includeChildren) {
 		Set<UUID> result = ConcurrentHashMap.newKeySet();
 		result.addAll(addressSet);
 
 		// Variable childList is to prevent locking childMap
 		// while executing for loop
 		List<SearchNode> childList = new ArrayList<>();
-		childList.addAll(childMap.values());
+		if (includeChildren) {
+			childList.addAll(childMap.values());
+		}
 
 		for (SearchNode c : childList) {
 			long gap = maxResults - result.size();
 			if (gap > 0) {
-				result.addAll(c.getAllAddresses(gap));
+				result.addAll(c.getAllAddresses(gap, includeChildren));
 			}
 		}
 
 		return result;
 	}
 
-	public Set<UUID> search(String query, long maxResults) {
+	public static List<String> getWords(String line) {
+		List<String> result = null;
+		if (!StringUtils.isBlank(line)) {
+			result = Arrays.asList(line.trim().toLowerCase().split("[^\\w]+"));
+		}
+		if (result == null || (result.size() == 1 && StringUtils.isBlank(result.get(0)))) {
+			result = new ArrayList<String>();
+		}
+		return result;
+	}
+
+	public Set<UUID> search(String query, long maxResults, boolean exactMatch) {
+		Set<UUID> result = ConcurrentHashMap.newKeySet();
+
+		List<String> words = getWords(query);
+		if (words == null || words.size() == 0) {
+			return result;
+		}
+
+		for (String w : words) {
+			long gap = maxResults - result.size();
+			if (gap > 0 && !StringUtils.isBlank(w)) {
+				Set<UUID> found = searchHelper(w, exactMatch, gap);
+				result.addAll(found);
+			}
+			if (result.size() > maxResults) {
+				break;
+			}
+		}
+
+		return result;
+
+	}
+
+	private Set<UUID> searchHelper(String query, boolean exactMatch, long maxResults) {
 		if (!query.startsWith(prefix)) {
-			return null;
+			return ConcurrentHashMap.newKeySet();
 		}
 		if (query.equals(prefix)) {
-			return getAllAddresses(maxResults);
+			return getAllAddresses(maxResults, exactMatch);
 		}
 
 		String nextPrefix = query.substring(0, prefix.length() + 1);
 		SearchNode child = childMap.get(nextPrefix);
-		return (null == child ? null : child.search(query, maxResults));
+		return (null == child ? ConcurrentHashMap.newKeySet() : child.searchHelper(query, exactMatch, maxResults));
 	}
 
 }

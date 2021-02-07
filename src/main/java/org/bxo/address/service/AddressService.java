@@ -9,12 +9,12 @@ public interface AddressService {
 
 	public AddressInfo getAddress(UUID addressId);
 
-	public List<AddressInfo> search(String query, long maxResults);
+	public List<AddressInfo> search(String query, long maxResults, boolean exactMatch, boolean requireAll);
 
 	public AddressInfo createAddress(AddressInfo address);
 
 	public AddressInfo updateAddress(AddressInfo address);
 
-	public void deleteAddress(UUID addressId);
+	public AddressInfo deleteAddress(UUID addressId);
 
 }

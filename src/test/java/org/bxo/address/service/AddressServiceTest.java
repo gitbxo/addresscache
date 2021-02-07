@@ -41,8 +41,8 @@ public class AddressServiceTest {
 		address1.setState("ST");
 		address1.setZip("12345");
 		addressService.createAddress(address1);
-		assertThat(addressService.search("12345", 10).size(), is(1));
-		assertThat(addressService.search("23456", 10), is(nullValue()));
+		assertThat(addressService.search("12345", 10, false, false).size(), is(1));
+		assertThat(addressService.search("23456", 10, false, false).size(), is(0));
 
 		AddressInfo address2 = addressService.getAddress(addressId);
 		address2.setLine1("address 2a");
@@ -51,8 +51,8 @@ public class AddressServiceTest {
 		address2.setState("S2");
 		address2.setZip("23456");
 		addressService.updateAddress(address2);
-		assertThat(addressService.search("12345", 10), is(nullValue()));
-		assertThat(addressService.search("23456", 10).size(), is(1));
+		assertThat(addressService.search("12345", 10, false, false).size(), is(0));
+		assertThat(addressService.search("23456", 10, false, false).size(), is(1));
 
 		assertThat(addressService.getAddress(addressId).toString(), is(address2.toString()));
 	}

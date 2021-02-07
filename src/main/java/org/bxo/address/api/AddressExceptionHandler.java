@@ -20,6 +20,14 @@ public class AddressExceptionHandler extends ResponseEntityExceptionHandler {
 		return new ResponseEntity<Object>("Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
+	@ExceptionHandler(IllegalArgumentException.class)
+	public final ResponseEntity<Object> handleIllegalArgument(Throwable t, WebRequest request) {
+		// List<String> details = new ArrayList<>();
+		// details.add(ex.getLocalizedMessage());
+		// ErrorResponse error = new ErrorResponse("Server Error", details);
+		return new ResponseEntity<Object>("Invalid Request", HttpStatus.BAD_REQUEST);
+	}
+
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 			HttpHeaders headers, HttpStatus status, WebRequest request) {
