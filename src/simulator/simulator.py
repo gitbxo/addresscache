@@ -67,7 +67,7 @@ def simulator(filename):
       addressId = data.get('addressId') or ''
       if addressId.startswith('ref '):
         try:
-          index = 1 + int(addressId.split(' ')[1])
+          index = int(addressId.split(' ')[1]) - 1
           cached = address_list[index]
           data['addressId'] = cached
         except:

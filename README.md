@@ -16,8 +16,8 @@ This also supports commands to get, create, update, search and delete.
 
 
 # Configuration
-File ```src/main/application.yml``` has parameters to configure the
-following:
+File ```src/main/resources/application.yml``` has parameters to
+configure the following:
 
 ## Port numbers
 Main server port is server.port
@@ -121,3 +121,6 @@ To handle potential concurrency issues when updating the SearchNode
 tree, those sections are put in synchronized blocks.
 Counters using AtomicLong and corresponding utilities to support multithreading.
 
+
+# Testing
+Run command ```mvn test```

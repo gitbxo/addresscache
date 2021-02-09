@@ -70,6 +70,21 @@
     "exactMatch": "true"
   },
   {
+    "task": "update",
+    "addressId": "ref 5",
+    "line1": "1700 Holloway Ave"
+  },
+  {
+    "task": "update",
+    "addressId": "ref 5",
+    "line1": "1600 Holloway Ave"
+  },
+  {
+    "task": "update",
+    "addressId": "ref 5",
+    "line1": "1600 Holloway Ave"
+  },
+  {
     "task": "get",
     "addressId": "ref 4"
   },
