@@ -46,8 +46,12 @@ public class AddressServiceImpl implements AddressService {
 	}
 
 	@Override
-	public List<AddressInfo> search(String query, int maxResults, boolean exactMatch, boolean requireAll) {
+	public List<AddressInfo> search(String query, int pageNumber, int resultsPerPage, int maxResults, boolean exactMatch, boolean requireAll) {
 		List<AddressInfo> addressList = new ArrayList<>();
+		if (pageNumber < 1)
+			pageNumber = 1;
+		if (pageNumber * resultsPerPage < maxResults)
+			maxResults = pageNumber * resultsPerPage;
 
 		if (requireAll && exactMatch) {
 			List<String> words = SearchNode.getWords(query);
@@ -86,7 +90,14 @@ public class AddressServiceImpl implements AddressService {
 			}
 		}
 
-		return addressList;
+		List<AddressInfo> resultList= new ArrayList<>();
+		for (int i=0; i < resultsPerPage; i++) {
+			int idx = (pageNumber - 1) * resultsPerPage + i;
+			if (idx >= 0 && addressList.size() > idx)
+				resultList.add(addressList.get(idx));
+		}
+
+		return resultList;
 	}
 
 	private String getLongestWord(List<String> words) {
@@ -100,7 +111,7 @@ public class AddressServiceImpl implements AddressService {
 	}
 
 	private AddressInfo findDuplicate(String addressText) {
-		List<AddressInfo> found = this.search(addressText, defaultMaxResults, true, true);
+		List<AddressInfo> found = this.search(addressText, 1, defaultMaxResults, defaultMaxResults, true, true);
 		if (found != null && found.size() > 0) {
 			for (AddressInfo a : found) {
 				if (a.getTextAddress().equals(addressText)) {

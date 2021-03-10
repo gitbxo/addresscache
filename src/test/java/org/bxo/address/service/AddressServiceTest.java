@@ -91,8 +91,8 @@ public class AddressServiceTest {
 		address1.setZip("12345");
 		addressService.createAddress(address1);
 
-		assertThat(addressService.search("update_city1", 10, false, false).size(), is(1));
-		assertThat(addressService.search("update_city2", 10, false, false).size(), is(0));
+		assertThat(addressService.search("update_city1", 0, 10, 10, false, false).size(), is(1));
+		assertThat(addressService.search("update_city2", 0, 10, 10, false, false).size(), is(0));
 		assertThat(addressService.getAddress(addressId).toString(), is(address1.toString()));
 
 		AddressInfo address2 = addressService.getAddress(addressId);
@@ -103,8 +103,8 @@ public class AddressServiceTest {
 		address2.setZip("23456");
 		addressService.updateAddress(address2);
 
-		assertThat(addressService.search("update_city1", 10, false, false).size(), is(0));
-		assertThat(addressService.search("update_city2", 10, false, false).size(), is(1));
+		assertThat(addressService.search("update_city1", 0, 10, 10, false, false).size(), is(0));
+		assertThat(addressService.search("update_city2", 0, 10, 10, false, false).size(), is(1));
 		assertThat(addressService.getAddress(addressId).toString(), is(address2.toString()));
 	}
 

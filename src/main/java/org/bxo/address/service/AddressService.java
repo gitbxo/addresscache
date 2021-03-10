@@ -9,7 +9,7 @@ public interface AddressService {
 
 	public AddressInfo getAddress(UUID addressId);
 
-	public List<AddressInfo> search(String query, int maxResults, boolean exactMatch, boolean requireAll);
+	public List<AddressInfo> search(String query, int pageNumber, int resultsPerPage, int maxResults, boolean exactMatch, boolean requireAll);
 
 	public AddressInfo createAddress(AddressInfo address);
 

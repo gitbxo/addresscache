@@ -50,6 +50,8 @@ public class AddressController {
 
 	@GetMapping(value = "/search")
 	public ResponseEntity<Object> search(@RequestParam(name = "query", required = true) String query,
+			@RequestParam(name = "pageNumber", required = false) Integer pageNumber,
+			@RequestParam(name = "resultsPerPage", required = false) Integer resultsPerPage,
 			@RequestParam(name = "maxResults", required = false) Integer maxResults,
 			@RequestParam(name = "exactMatch", required = false) Boolean exactMatch,
 			@RequestParam(name = "requireAll", required = false) Boolean requireAll) {
@@ -57,6 +59,12 @@ public class AddressController {
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 		try {
+			if (null == pageNumber || pageNumber < 1) {
+				pageNumber = 1;
+			}
+			if (null == resultsPerPage || resultsPerPage < 2) {
+				resultsPerPage = 5;
+			}
 			if (null == maxResults) {
 				maxResults = -1;
 			}
@@ -66,7 +74,7 @@ public class AddressController {
 			if (null == requireAll) {
 				requireAll = false;
 			}
-			List<AddressInfo> addressList = addressService.search(query, maxResults, exactMatch, requireAll);
+			List<AddressInfo> addressList = addressService.search(query, pageNumber, resultsPerPage, maxResults, exactMatch, requireAll);
 			if (null == addressList || addressList.size() == 0) {
 				statusCode = HttpStatus.NOT_FOUND;
 				return new ResponseEntity<Object>("Address not found", statusCode);
