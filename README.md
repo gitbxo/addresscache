@@ -9,6 +9,8 @@ This allows saving and updating Addresses and searching for Addresses
 Note: Must install maven and JDK15 to build and run the program
 ```mvn clean spring-boot:run```
 
+Initialize python virtual environment:
+```. src/simulator/pyactivate.bash```
 Load the data using python3:
 ```python3 src/simulator/simulator.py src/simulator/addresses.json```
 This also supports commands to get, create, update, search and delete.
