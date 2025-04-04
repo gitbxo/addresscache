@@ -30,7 +30,7 @@ public class AddressController {
 	private AddressService addressService;
 
 	@GetMapping(value = "/address")
-	public ResponseEntity<Object> getAddress(@RequestParam(name = "addressId", required = true) String addressId) {
+	public ResponseEntity<Object> getAddress(@RequestParam(required = true) String addressId) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -49,12 +49,12 @@ public class AddressController {
 	}
 
 	@GetMapping(value = "/search")
-	public ResponseEntity<Object> search(@RequestParam(name = "query", required = true) String query,
-			@RequestParam(name = "pageNumber", required = false) Integer pageNumber,
-			@RequestParam(name = "resultsPerPage", required = false) Integer resultsPerPage,
-			@RequestParam(name = "maxResults", required = false) Integer maxResults,
-			@RequestParam(name = "exactMatch", required = false) Boolean exactMatch,
-			@RequestParam(name = "requireAll", required = false) Boolean requireAll) {
+	public ResponseEntity<Object> search(@RequestParam(required = true) String query,
+			@RequestParam(required = false) Integer pageNumber,
+			@RequestParam(required = false) Integer resultsPerPage,
+			@RequestParam(required = false) Integer maxResults,
+			@RequestParam(required = false) Boolean exactMatch,
+			@RequestParam(required = false) Boolean requireAll) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -96,11 +96,11 @@ public class AddressController {
 	}
 
 	@PostMapping(value = "/address")
-	public ResponseEntity<Object> createAddress(@RequestParam(name = "line1", required = true) String line1,
-			@RequestParam(name = "line2", required = false) String line2,
-			@RequestParam(name = "city", required = true) String city,
-			@RequestParam(name = "state", required = true) String state,
-			@RequestParam(name = "zip", required = true) String zip) {
+	public ResponseEntity<Object> createAddress(@RequestParam(required = true) String line1,
+			@RequestParam(required = false) String line2,
+			@RequestParam(required = true) String city,
+			@RequestParam(required = true) String state,
+			@RequestParam(required = true) String zip) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -124,12 +124,12 @@ public class AddressController {
 	}
 
 	@PutMapping(value = "/address")
-	public ResponseEntity<Object> updateAddress(@RequestParam(name = "addressId", required = true) String addressId,
-			@RequestParam(name = "line1", required = false) String line1,
-			@RequestParam(name = "line2", required = false) String line2,
-			@RequestParam(name = "city", required = false) String city,
-			@RequestParam(name = "state", required = false) String state,
-			@RequestParam(name = "zip", required = false) String zip) {
+	public ResponseEntity<Object> updateAddress(@RequestParam(required = true) String addressId,
+			@RequestParam(required = false) String line1,
+			@RequestParam(required = false) String line2,
+			@RequestParam(required = false) String city,
+			@RequestParam(required = false) String state,
+			@RequestParam(required = false) String zip) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -165,7 +165,7 @@ public class AddressController {
 	}
 
 	@DeleteMapping(value = "/address")
-	public ResponseEntity<Object> deleteAddress(@RequestParam(name = "addressId", required = true) String addressId) {
+	public ResponseEntity<Object> deleteAddress(@RequestParam(required = true) String addressId) {
 
 		Long startMillis = System.currentTimeMillis();
 		HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
